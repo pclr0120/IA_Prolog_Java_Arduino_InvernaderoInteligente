@@ -1,0 +1,67 @@
+% Hechos...
+% Esta regla abre y cirra la conexion hacia la base de conocimientos
+abrirConexion:- odbc_connect('Prolog', _, [ user(root), password('12345'),alias('prolog'),open(once) ]).
+cerrarConexion:-odbc_disconnect('prolog').
+
+%Hecho  se obtiene las temperatura que no permite crecer a la planta
+temperaturaDetieneDesarrollo(Temperatura):-odbc_query('prolog','select(Temperatura) from temperatura where Temperatura>=10 and Temperatura <=12', row(Temperatura)).
+
+%Se obteine la temperatura para un desarrollo de las
+temperaturaDesarrolloNormal(Temperatura):-odbc_query('prolog','select(Temperatura) from temperatura where Temperatura>=18 and Temperatura <=25', row(Temperatura)).
+
+
+temperaturaMayorDesarrollo(Temperatura):-odbc_query('prolog','select(Temperatura) from temperatura where Temperatura>=21 and Temperatura <=30', row(Temperatura)).
+
+% 
+humedadOptima(Humedad):-odbc_query('prolog','select(Humedad) from temperatura where Humedad>=60 and Humedad <=80', row(Humedad)).
+
+
+
+%%Horas del dia en que se puede abrir el techo.
+horasSol(11).
+horasSol(12).
+horasSol(13).
+horasSol(14).
+horasSol(15).
+horasSol(16).
+
+menor(X,Y):-X<Y.
+mayor(X,Y):-X>Y.
+% Esta regla se utilizara para validar si hay luz solar en dichas horas
+esHoraDeLuzSolar(X):-horasSol(X).
+
+
+%Humedad esta por debajo del rango permitido
+humedadBaja(H):-not(humedadOptima(H)),menor(H,60).
+%Humedad sobre pasa el rango permitido
+humedadAlta(H):-not(humedadOptima(H)),mayor(H,80).
+
+%se abrira el techo si  hay luz solar y la humedad es optima.
+abrirTecho(Hr,H):-esHoraDeLuzSolar(Hr),humedadOptima(H).
+% Se encienden los focos cuando la temperatura esta por debajo del rango
+% y el techo no esta abierto, para mantener la temperatura y humedad
+% adecuada.
+encenderFocos(T,Hr,H):-temperaturaDetieneDesarrollo(T),not(abrirTecho(Hr,H)).
+% ESta regla se utilizara para validar cuando se pueda regar, las
+% temperaturas deben de estar en el rango de normales o mayor desarrollo
+temperaturaOptimaParaRegar(T):-temperaturaDesarrolloNormal(T);temperaturaMayorDesarrollo(T).
+%regar si la huemdad es baja y temperatura esta en rango.
+regar(H,T):-humedadBaja(H),temperaturaOptimaParaRegar(T).
+%Se encendera el ventilador cuando la temperatura sobre pase los 30C y se abrira mediotecho
+encenderVentilador(T):-T>30.
+% Esta regla abre medio techo para que entre un poco de luz solar
+abrirMedioTecho(T):-T>30.
+
+% Esta regla se utilizara para apagar todos los sensores del arduino,
+% para optimizar energia.
+optimizar(T,H):-temperaturaMayorDesarrollo(T),humedadOptima(H).
+
+
+
+%parafloreser luz directa en 6 horas seran minutos
+
+
+
+
+
+
